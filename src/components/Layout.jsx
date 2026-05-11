@@ -19,6 +19,7 @@ const navItems = [
   { to: '/estimates', label: 'Estimates', icon: FileText },
   { to: '/invoices', label: 'Invoices', icon: Receipt },
   { to: '/reports', label: 'Reports', icon: BarChart3 },
+  { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
 export function Layout() {

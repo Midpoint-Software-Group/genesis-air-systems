@@ -4,10 +4,11 @@ import { supabase } from '../lib/supabase'
 import { PageHeader } from '../components/PageHeader'
 import { StatusPill } from '../components/StatusPill'
 import { generateInvoicePDF } from '../lib/pdfGenerator'
+import { sendInvoiceEmail, sendOverdueReminder } from '../lib/emailService'
 import { format } from 'date-fns'
 import {
   ArrowLeft, Download, Send, CheckCircle, FileText,
-  Receipt, AlertCircle, DollarSign
+  Receipt, AlertCircle, DollarSign, Mail
 } from 'lucide-react'
 
 export function InvoiceDetail() {
@@ -45,9 +46,35 @@ export function InvoiceDetail() {
     const updates = { status: newStatus }
     if (newStatus === 'sent') updates.issued_at = new Date().toISOString()
     const { error } = await supabase.from('invoices').update(updates).eq('id', id)
+    if (error) { setError(error.message); setUpdating(false); return }
+
+    // Auto-send email when status flips to sent
+    if (newStatus === 'sent' && customer?.email) {
+      try {
+        const result = await sendInvoiceEmail({ ...invoice, ...updates }, customer, lineItems)
+        if (result?.skipped) {
+          // ok — feature might be disabled
+        }
+      } catch (emailErr) {
+        // Don't block the status change if email fails — just log it
+        console.error('Email send error:', emailErr)
+        setError(`Invoice sent, but email failed: ${emailErr.message}`)
+      }
+    }
     setUpdating(false)
-    if (error) setError(error.message)
-    else loadInvoice()
+    loadInvoice()
+  }
+
+  async function sendReminderEmail() {
+    setUpdating(true)
+    try {
+      await sendOverdueReminder(invoice, customer)
+      setError('')
+      alert('Reminder email sent.')
+    } catch (err) {
+      setError(`Reminder failed: ${err.message}`)
+    }
+    setUpdating(false)
   }
 
   async function recordPayment() {
@@ -107,9 +134,17 @@ export function InvoiceDetail() {
               </button>
             )}
             {isSent && (
-              <button onClick={() => setShowPaymentModal(true)} className="btn-primary inline-flex items-center gap-2">
-                <DollarSign size={16} /> Record Payment
-              </button>
+              <>
+                {(invoice.status === 'overdue' || (invoice.due_date && new Date(invoice.due_date) < new Date())) && (
+                  <button onClick={sendReminderEmail} disabled={updating || !customer?.email}
+                    className="btn-secondary inline-flex items-center gap-2 text-amber-700 border-amber-200 hover:bg-amber-50">
+                    <Mail size={16} /> Email Reminder
+                  </button>
+                )}
+                <button onClick={() => setShowPaymentModal(true)} className="btn-primary inline-flex items-center gap-2">
+                  <DollarSign size={16} /> Record Payment
+                </button>
+              </>
             )}
           </>
         }

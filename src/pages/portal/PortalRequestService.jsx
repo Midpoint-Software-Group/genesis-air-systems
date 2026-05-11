@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
+import { sendRequestAcknowledgement } from '../../lib/emailService'
 import { PageHeader } from '../../components/PageHeader'
 import { ArrowLeft, Send, CheckCircle, Wrench, Wind, Flame, AlertCircle } from 'lucide-react'
 
@@ -92,10 +93,18 @@ export function PortalRequestService() {
       status: 'pending',
     }
 
-    const { error } = await supabase.from('service_requests').insert(payload)
+    const { data: newRequest, error } = await supabase.from('service_requests').insert(payload).select().single()
+    if (error) { setError(error.message); setLoading(false); return }
+
+    // Send acknowledgement email (don't block on failure)
+    try {
+      await sendRequestAcknowledgement(newRequest, customer)
+    } catch (emailErr) {
+      console.error('Ack email failed:', emailErr)
+    }
+
     setLoading(false)
-    if (error) setError(error.message)
-    else setSubmitted(true)
+    setSubmitted(true)
   }
 
   if (submitted) {

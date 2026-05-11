@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { PageHeader } from '../components/PageHeader'
 import { StatusPill } from '../components/StatusPill'
 import { generateEstimatePDF } from '../lib/pdfGenerator'
+import { sendEstimateEmail } from '../lib/emailService'
 import { format } from 'date-fns'
 import {
   ArrowLeft, Download, Send, CheckCircle, XCircle, FileText,
@@ -46,9 +47,19 @@ export function EstimateDetail() {
     if (newStatus === 'approved') updates.approved_at = new Date().toISOString()
 
     const { error } = await supabase.from('estimates').update(updates).eq('id', id)
+    if (error) { setError(error.message); setUpdating(false); return }
+
+    // Auto-send email when status flips to sent
+    if (newStatus === 'sent' && customer?.email) {
+      try {
+        await sendEstimateEmail({ ...estimate, ...updates }, customer, lineItems)
+      } catch (emailErr) {
+        console.error('Email send error:', emailErr)
+        setError(`Estimate sent, but email failed: ${emailErr.message}`)
+      }
+    }
     setUpdating(false)
-    if (error) setError(error.message)
-    else loadEstimate()
+    loadEstimate()
   }
 
   async function convertToInvoice() {
