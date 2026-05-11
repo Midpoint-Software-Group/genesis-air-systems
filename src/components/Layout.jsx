@@ -1,24 +1,33 @@
 import { Link, NavLink, useNavigate, Outlet } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { supabase } from '../lib/supabase'
 import { FullLogo } from './Logo'
 import {
   LayoutDashboard, Users, ClipboardList, Calendar, FileText,
-  Receipt, BarChart3, Settings, LogOut, Bell, Search
+  Receipt, BarChart3, Settings, LogOut, Bell, Search, UserCog, Inbox
 } from 'lucide-react'
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/jobs', label: 'Jobs', icon: ClipboardList },
   { to: '/dispatch', label: 'Dispatch', icon: Calendar },
+  { to: '/requests', label: 'Requests', icon: Inbox },
   { to: '/customers', label: 'Customers', icon: Users },
+  { to: '/team', label: 'Team', icon: UserCog },
   { to: '/estimates', label: 'Estimates', icon: FileText },
   { to: '/invoices', label: 'Invoices', icon: Receipt },
-  { to: '/reports', label: 'Reports', icon: BarChart3 },
 ]
 
 export function Layout() {
   const { profile, signOut } = useAuth()
   const navigate = useNavigate()
+  const [pendingCount, setPendingCount] = useState(0)
+
+  useEffect(() => {
+    supabase.from('service_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending')
+      .then(({ count }) => setPendingCount(count || 0))
+  }, [])
 
   const handleLogout = async () => {
     await signOut()
@@ -39,7 +48,7 @@ export function Layout() {
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                  `flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors relative ${
                     isActive
                       ? 'text-ember-500 border-b-2 border-ember-500 rounded-b-none'
                       : 'text-navy-200 hover:text-white hover:bg-navy-800'
@@ -48,6 +57,9 @@ export function Layout() {
               >
                 <item.icon size={14} />
                 {item.label}
+                {item.to === '/requests' && pendingCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-ember-600 rounded-full text-[9px] flex items-center justify-center text-white font-medium">{pendingCount}</span>
+                )}
               </NavLink>
             ))}
           </nav>

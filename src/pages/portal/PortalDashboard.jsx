@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { PageHeader } from '../../components/PageHeader'
@@ -46,9 +46,9 @@ export function PortalDashboard() {
         title={`Welcome${profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}`}
         subtitle={format(new Date(), 'EEEE, MMMM d, yyyy')}
         actions={
-          <a href="tel:" className="btn-primary inline-flex items-center gap-2">
+          <Link to="/portal/request-service" className="btn-primary inline-flex items-center gap-2">
             <Phone size={16} /> Request Service
-          </a>
+          </Link>
         }
       />
 

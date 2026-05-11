@@ -18,12 +18,17 @@ import { EstimateDetail } from './pages/EstimateDetail'
 import { Invoices } from './pages/Invoices'
 import { NewInvoice } from './pages/NewInvoice'
 import { InvoiceDetail } from './pages/InvoiceDetail'
+import { Team } from './pages/Team'
+import { NewTech } from './pages/NewTech'
+import { TechDetail } from './pages/TechDetail'
+import { ServiceRequests } from './pages/ServiceRequests'
 import { Reports } from './pages/Reports'
 
 import { PortalLayout } from './pages/portal/PortalLayout'
 import { PortalDashboard } from './pages/portal/PortalDashboard'
 import { PortalJobs } from './pages/portal/PortalJobs'
 import { PortalInvoices } from './pages/portal/PortalInvoices'
+import { PortalRequestService } from './pages/portal/PortalRequestService'
 
 function LoadingScreen() {
   return (
@@ -74,6 +79,10 @@ export default function App() {
         <Route path="/jobs/new" element={<NewJob />} />
         <Route path="/jobs/:id" element={<JobDetail />} />
         <Route path="/dispatch" element={<Dispatch />} />
+        <Route path="/requests" element={<ServiceRequests />} />
+        <Route path="/team" element={<Team />} />
+        <Route path="/team/new" element={<NewTech />} />
+        <Route path="/team/:id" element={<TechDetail />} />
         <Route path="/estimates" element={<Estimates />} />
         <Route path="/estimates/new" element={<NewEstimate />} />
         <Route path="/estimates/:id" element={<EstimateDetail />} />
@@ -87,6 +96,7 @@ export default function App() {
         <Route index element={<PortalDashboard />} />
         <Route path="jobs" element={<PortalJobs />} />
         <Route path="invoices" element={<PortalInvoices />} />
+        <Route path="request-service" element={<PortalRequestService />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/login" replace />} />

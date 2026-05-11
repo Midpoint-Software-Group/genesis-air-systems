@@ -24,6 +24,7 @@ export function NewJob() {
 
   const [customers, setCustomers] = useState([])
   const [techs, setTechs] = useState([])
+  const [equipment, setEquipment] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -35,6 +36,7 @@ export function NewJob() {
     scheduled_at: '',
     estimated_duration_minutes: 60,
     assigned_tech_id: '',
+    equipment_id: '',
     address_line1: '',
     address_line2: '',
     city: '',
@@ -52,6 +54,18 @@ export function NewJob() {
       setTechs(tech.data || [])
     })
   }, [])
+
+  // Load equipment for selected customer
+  useEffect(() => {
+    if (form.customer_id) {
+      supabase.from('equipment')
+        .select('id, equipment_type, nickname, make, model')
+        .eq('customer_id', form.customer_id).eq('is_active', true)
+        .then(({ data }) => setEquipment(data || []))
+    } else {
+      setEquipment([])
+    }
+  }, [form.customer_id])
 
   const selectedCustomer = customers.find(c => c.id === form.customer_id)
 
@@ -99,6 +113,7 @@ export function NewJob() {
       estimated_duration_minutes: parseInt(form.estimated_duration_minutes) || 60,
       assigned_tech_id: form.assigned_tech_id || null,
       assigned_tech_name: assignedTech?.full_name || null,
+      equipment_id: form.equipment_id || null,
       status: form.assigned_tech_id ? 'scheduled' : 'unassigned',
       ...address,
     }
@@ -175,6 +190,21 @@ export function NewJob() {
             {techs.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
           </select>
         </div>
+
+        {equipment.length > 0 && (
+          <div className="mb-6">
+            <label className="label">Related Equipment (optional)</label>
+            <select name="equipment_id" className="input" value={form.equipment_id} onChange={handleChange}>
+              <option value="">No specific equipment</option>
+              {equipment.map(e => (
+                <option key={e.id} value={e.id}>
+                  {e.nickname || `${e.make || ''} ${e.model || ''}`.trim() || 'Unit'} ({e.equipment_type.replace('_', ' ')})
+                </option>
+              ))}
+            </select>
+            <p className="text-[10px] text-slate-400 mt-1">Link this job to a specific HVAC unit for service history.</p>
+          </div>
+        )}
 
         <div className="border-t border-navy-100 pt-4 mb-4">
           <label className="flex items-center gap-2 cursor-pointer text-sm text-navy-700 mb-3">

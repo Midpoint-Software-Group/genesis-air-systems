@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { PageHeader } from '../components/PageHeader'
 import { StatusPill } from '../components/StatusPill'
+import { EquipmentList } from '../components/EquipmentList'
 import { format } from 'date-fns'
 import {
   Building2, Home, ArrowLeft, Mail, Phone, MapPin, Plus,
@@ -128,6 +129,8 @@ export function CustomerDetail() {
               <div className="flex justify-between"><span className="text-navy-300">Customer Since</span><span className="font-medium">{format(new Date(customer.created_at), 'MMM yyyy')}</span></div>
             </div>
           </div>
+
+          <EquipmentList customerId={customer.id} />
         </div>
 
         <div className="space-y-4">
