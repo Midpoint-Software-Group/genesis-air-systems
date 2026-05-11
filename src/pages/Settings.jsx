@@ -11,6 +11,8 @@ const SECTIONS = [
   { id: 'business', label: 'Business Info', icon: Building2 },
   { id: 'financial', label: 'Financial Defaults', icon: DollarSign },
   { id: 'email', label: 'Email & Notifications', icon: Mail },
+  { id: 'sms', label: 'SMS Notifications', icon: Bell },
+  { id: 'payments', label: 'Stripe Payments', icon: DollarSign },
   { id: 'service', label: 'Service Defaults', icon: SettingsIcon },
 ]
 
@@ -303,7 +305,80 @@ export function Settings() {
             </>
           )}
 
-          {activeSection === 'service' && (
+          {activeSection === 'sms' && (
+            <>
+              <div className="card p-6 mb-4">
+                <h2 className="font-serif text-lg text-navy-900 mb-1">Twilio SMS</h2>
+                <p className="text-xs text-slate-500 mb-6">Send automated text messages to customers at key job milestones</p>
+                <div className="mb-3">
+                  <label className="label">Account SID</label>
+                  <input className="input font-mono text-sm" value={settings.twilio_account_sid || ''}
+                    onChange={(e) => update('twilio_account_sid', e.target.value)} placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+                </div>
+                <div className="mb-3">
+                  <label className="label">Auth Token</label>
+                  <input type="password" className="input font-mono text-sm" value={settings.twilio_auth_token || ''}
+                    onChange={(e) => update('twilio_auth_token', e.target.value)} placeholder="Your auth token" />
+                </div>
+                <div className="mb-4">
+                  <label className="label">From Number</label>
+                  <input type="tel" className="input" value={settings.twilio_from_number || ''}
+                    onChange={(e) => update('twilio_from_number', e.target.value)} placeholder="+12525550100" />
+                  <p className="text-[11px] text-slate-500 mt-1">Must be a verified Twilio number in E.164 format</p>
+                </div>
+              </div>
+              <div className="card p-6">
+                <h2 className="font-serif text-lg text-navy-900 mb-1">SMS Triggers</h2>
+                <div className="space-y-3">
+                  {[
+                    { key: 'sms_notify_on_scheduled', label: 'Job scheduled confirmation', desc: 'Customer gets a text when their job is booked with date, time, and tech name' },
+                    { key: 'sms_notify_on_en_route', label: 'Tech en route alert', desc: 'Customer gets a text when the tech marks En Route — "Kevin is on the way"' },
+                    { key: 'sms_notify_on_completed', label: 'Job completed notice', desc: 'Customer gets a text when the job is marked complete with thank-you message' },
+                  ].map(t => (
+                    <label key={t.key} className="flex items-start gap-3 cursor-pointer p-3 hover:bg-navy-50/30 rounded">
+                      <input type="checkbox" checked={!!settings[t.key]}
+                        onChange={(e) => update(t.key, e.target.checked)}
+                        className="mt-0.5 rounded border-navy-200 text-ember-600 focus:ring-ember-500" />
+                      <div>
+                        <div className="text-sm font-medium text-navy-900">{t.label}</div>
+                        <div className="text-xs text-slate-500 mt-0.5">{t.desc}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeSection === 'payments' && (
+            <div className="card p-6">
+              <h2 className="font-serif text-lg text-navy-900 mb-1">Stripe Payments</h2>
+              <p className="text-xs text-slate-500 mb-6">Allow customers to pay invoices online from their portal with a credit card</p>
+              <div className="mb-3">
+                <label className="label">Publishable Key</label>
+                <input className="input font-mono text-sm" value={settings.stripe_publishable_key || ''}
+                  onChange={(e) => update('stripe_publishable_key', e.target.value)} placeholder="pk_live_..." />
+              </div>
+              <div className="mb-3">
+                <label className="label">Secret Key</label>
+                <input type="password" className="input font-mono text-sm" value={settings.stripe_secret_key || ''}
+                  onChange={(e) => update('stripe_secret_key', e.target.value)} placeholder="sk_live_..." />
+                <p className="text-[11px] text-slate-500 mt-1">Stored securely, only used server-side in Edge Functions</p>
+              </div>
+              <div className="mb-4">
+                <label className="label">Webhook Secret <span className="text-slate-400 font-normal">(optional but recommended)</span></label>
+                <input type="password" className="input font-mono text-sm" value={settings.stripe_webhook_secret || ''}
+                  onChange={(e) => update('stripe_webhook_secret', e.target.value)} placeholder="whsec_..." />
+              </div>
+              <div className="bg-navy-50 rounded p-3 text-xs text-slate-700">
+                <strong>Webhook URL</strong> to add in Stripe Dashboard → Developers → Webhooks:<br />
+                <code className="font-mono text-[11px] bg-white px-1.5 py-0.5 rounded mt-1 inline-block break-all">
+                  {`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-webhook`}
+                </code><br />
+                <span className="text-slate-500 mt-1 block">Listen for: <code>checkout.session.completed</code></span>
+              </div>
+            </div>
+          )}
             <div className="card p-6">
               <h2 className="font-serif text-lg text-navy-900 mb-1">Service Defaults</h2>
               <p className="text-xs text-slate-500 mb-6">Pre-fill values used when creating jobs and contracts</p>

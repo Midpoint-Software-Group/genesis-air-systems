@@ -6,6 +6,7 @@ import { StatusPill } from '../components/StatusPill'
 import { PhotoGallery } from '../components/PhotoGallery'
 import { syncJobToCalendar } from './CalendarConnect'
 import { sendReviewRequest } from '../lib/reviewService'
+import { sendTechEnRouteSms, sendJobCompletedSms } from '../lib/smsService'
 import { format } from 'date-fns'
 import {
   ArrowLeft, MapPin, Clock, User, Wrench, Phone,
@@ -48,6 +49,14 @@ export function JobDetail() {
     if (newStatus === 'completed') updates.completed_at = new Date().toISOString()
     if (newStatus === 'in_progress') updates.started_at = new Date().toISOString()
     await supabase.from('jobs').update(updates).eq('id', id)
+
+    // SMS triggers
+    if (newStatus === 'en_route') {
+      sendTechEnRouteSms({ ...job, status: 'en_route' }).catch(console.error)
+    }
+    if (newStatus === 'completed' && wasNotCompleted && job.customer_id) {
+      sendJobCompletedSms({ ...job, status: 'completed' }).catch(console.error)
+    }
 
     // Auto-send review request when status transitions to completed
     if (newStatus === 'completed' && wasNotCompleted && job.customer_id) {

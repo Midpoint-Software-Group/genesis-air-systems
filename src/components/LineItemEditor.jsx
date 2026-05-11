@@ -1,6 +1,10 @@
-import { Plus, Trash2, GripVertical } from 'lucide-react'
+import { useState } from 'react'
+import { Plus, Trash2, BookOpen } from 'lucide-react'
+import { PricebookPicker } from './PricebookPicker'
 
 export function LineItemEditor({ items, onChange, taxRate = 0, discountAmount = 0 }) {
+  const [showPricebook, setShowPricebook] = useState(false)
+
   const addItem = () => {
     onChange([
       ...items,
@@ -14,6 +18,22 @@ export function LineItemEditor({ items, onChange, taxRate = 0, discountAmount = 
         _isNew: true,
       },
     ])
+  }
+
+  const addFromPricebook = (pbItem) => {
+    onChange([
+      ...items,
+      {
+        id: `new-${Date.now()}-${Math.random()}`,
+        description: pbItem.name,
+        quantity: 1,
+        unit_price: Number(pbItem.unit_price),
+        is_taxable: pbItem.is_taxable,
+        sort_order: items.length,
+        _isNew: true,
+      },
+    ])
+    setShowPricebook(false)
   }
 
   const updateItem = (idx, field, value) => {
@@ -117,12 +137,20 @@ export function LineItemEditor({ items, onChange, taxRate = 0, discountAmount = 
           )
         })}
 
-        <div className="border-t border-navy-50 p-3">
+        <div className="border-t border-navy-50 p-3 flex items-center gap-2">
           <button type="button" onClick={addItem} className="btn-secondary text-xs inline-flex items-center gap-1.5">
             <Plus size={12} /> Add Line
           </button>
+          <button type="button" onClick={() => setShowPricebook(true)}
+            className="btn-secondary text-xs inline-flex items-center gap-1.5 text-ember-700 border-ember-200 hover:bg-ember-50">
+            <BookOpen size={12} /> From Pricebook
+          </button>
         </div>
       </div>
+
+      {showPricebook && (
+        <PricebookPicker onSelect={addFromPricebook} onClose={() => setShowPricebook(false)} />
+      )}
 
       {/* Totals section */}
       <div className="mt-4 flex justify-end">

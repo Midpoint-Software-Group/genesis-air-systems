@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { PageHeader } from '../components/PageHeader'
 import { StatusPill } from '../components/StatusPill'
 import { EmptyState } from '../components/EmptyState'
+import { sendJobScheduledSms } from '../lib/smsService'
 import { format } from 'date-fns'
 import {
   Inbox, CheckCircle, XCircle, Calendar, AlertTriangle,
@@ -248,6 +249,9 @@ function ConvertRequestModal({ request, techs, onClose, onConverted }) {
         status: 'scheduled',
         job_id: job.id,
       }).eq('id', request.id)
+
+      // SMS notification
+      sendJobScheduledSms(job).catch(console.error)
 
       onConverted(job.id)
     } catch (err) {

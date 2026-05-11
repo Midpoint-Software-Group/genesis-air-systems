@@ -33,6 +33,8 @@ const RoutesPage = lazy(() => import('./pages/Routes').then(m => ({ default: m.R
 const CalendarConnect = lazy(() => import('./pages/CalendarConnect').then(m => ({ default: m.CalendarConnect })))
 const PublicReview = lazy(() => import('./pages/PublicReview').then(m => ({ default: m.PublicReview })))
 const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })))
+const Pricebook = lazy(() => import('./pages/Pricebook').then(m => ({ default: m.Pricebook })))
+const Inventory = lazy(() => import('./pages/Inventory').then(m => ({ default: m.Inventory })))
 
 const PortalLayout = lazy(() => import('./pages/portal/PortalLayout').then(m => ({ default: m.PortalLayout })))
 const PortalDashboard = lazy(() => import('./pages/portal/PortalDashboard').then(m => ({ default: m.PortalDashboard })))
@@ -136,6 +138,8 @@ export default function App() {
           <Route path="/routes" element={<RoutesPage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/calendar" element={<CalendarConnect />} />
+          <Route path="/pricebook" element={<Pricebook />} />
+          <Route path="/inventory" element={<Inventory />} />
         </Route>
 
         <Route path="/review/:token" element={<PublicReview />} />

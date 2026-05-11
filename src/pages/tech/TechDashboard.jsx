@@ -20,6 +20,27 @@ export function TechDashboard() {
 
   useEffect(() => { if (techRecord?.id) load() }, [techRecord])
 
+  // GPS: update tech location when the dashboard mounts and on an interval
+  useEffect(() => {
+    if (!techRecord?.id) return
+    function updateLocation() {
+      if (!navigator.geolocation) return
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          supabase.from('technicians').update({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          }).eq('id', techRecord.id).then()
+        },
+        () => { /* permission denied — silently skip */ },
+        { enableHighAccuracy: true, timeout: 10000 }
+      )
+    }
+    updateLocation()
+    const interval = setInterval(updateLocation, 5 * 60 * 1000) // every 5 min
+    return () => clearInterval(interval)
+  }, [techRecord])
+
   async function load() {
     setLoading(true)
     const startOfDay = new Date()
