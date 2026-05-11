@@ -2,10 +2,16 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { PageHeader } from '../components/PageHeader'
+import { SectionNav } from '../components/SectionNav'
 import { EmptyState } from '../components/EmptyState'
 import { StatCard } from '../components/StatCard'
 import { format } from 'date-fns'
-import { Star, MessageCircle, TrendingUp, CheckCircle, Clock, Eye, EyeOff } from 'lucide-react'
+import { Star, MessageCircle, TrendingUp, CheckCircle, Clock, Eye, EyeOff, BarChart3 } from 'lucide-react'
+
+const REPORT_SECTION_NAV = [
+  { to: '/reports', label: 'Overview', icon: BarChart3, exact: true },
+  { to: '/reviews', label: 'Reviews', icon: Star },
+]
 
 export function Reviews() {
   const [reviews, setReviews] = useState([])
@@ -42,6 +48,7 @@ export function Reviews() {
   return (
     <div>
       <PageHeader title="Reviews" subtitle="Customer feedback after completed jobs" />
+      <SectionNav items={REPORT_SECTION_NAV} />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
         <StatCard label="Avg Rating" value={avgRating > 0 ? `${avgRating.toFixed(1)} ★` : '—'}

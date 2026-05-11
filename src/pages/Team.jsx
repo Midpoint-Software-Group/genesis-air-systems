@@ -2,9 +2,15 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { PageHeader } from '../components/PageHeader'
+import { SectionNav } from '../components/SectionNav'
 import { EmptyState } from '../components/EmptyState'
 import { format } from 'date-fns'
-import { Plus, Users, Phone, Mail, Wrench, Search } from 'lucide-react'
+import { Plus, Users, Phone, Mail, Wrench, Search, UserCog } from 'lucide-react'
+
+const CUSTOMER_SECTION_NAV = [
+  { to: '/customers', label: 'Customers', icon: Users, exact: true },
+  { to: '/team', label: 'Team', icon: UserCog },
+]
 
 const STATUS_COLORS = {
   available: 'bg-blue-500',
@@ -64,6 +70,7 @@ export function Team() {
           </Link>
         }
       />
+      <SectionNav items={CUSTOMER_SECTION_NAV} />
 
       <div className="flex items-center gap-3 mb-4">
         <div className="relative flex-1 max-w-sm">

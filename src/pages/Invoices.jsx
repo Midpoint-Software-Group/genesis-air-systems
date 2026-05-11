@@ -2,11 +2,17 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { PageHeader } from '../components/PageHeader'
+import { SectionNav } from '../components/SectionNav'
 import { EmptyState } from '../components/EmptyState'
 import { StatusPill } from '../components/StatusPill'
 import { StatCard } from '../components/StatCard'
 import { format } from 'date-fns'
-import { Plus, Receipt, DollarSign, Clock, AlertTriangle } from 'lucide-react'
+import { Plus, Receipt, DollarSign, Clock, AlertTriangle, FileText } from 'lucide-react'
+
+const BILLING_SECTION_NAV = [
+  { to: '/estimates', label: 'Estimates', icon: FileText, exact: true },
+  { to: '/invoices', label: 'Invoices', icon: Receipt },
+]
 
 export function Invoices() {
   const [invoices, setInvoices] = useState([])
@@ -44,6 +50,7 @@ export function Invoices() {
           </Link>
         }
       />
+      <SectionNav items={BILLING_SECTION_NAV} />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
         <StatCard label="Outstanding" value={`$${stats.outstanding.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} sub="Awaiting payment" icon={Clock} />

@@ -2,10 +2,16 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { PageHeader } from '../components/PageHeader'
+import { SectionNav } from '../components/SectionNav'
 import { EmptyState } from '../components/EmptyState'
 import { StatusPill } from '../components/StatusPill'
 import { format } from 'date-fns'
-import { Plus, FileText } from 'lucide-react'
+import { Plus, FileText, Receipt } from 'lucide-react'
+
+const BILLING_SECTION_NAV = [
+  { to: '/estimates', label: 'Estimates', icon: FileText, exact: true },
+  { to: '/invoices', label: 'Invoices', icon: Receipt },
+]
 
 export function Estimates() {
   const [estimates, setEstimates] = useState([])
@@ -33,6 +39,7 @@ export function Estimates() {
           </Link>
         }
       />
+      <SectionNav items={BILLING_SECTION_NAV} />
       {loading ? (
         <div className="card p-8 text-center text-sm text-slate-400">Loading…</div>
       ) : estimates.length === 0 ? (

@@ -2,10 +2,17 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { PageHeader } from '../components/PageHeader'
+import { SectionNav } from '../components/SectionNav'
 import { EmptyState } from '../components/EmptyState'
 import { StatusPill } from '../components/StatusPill'
 import { format } from 'date-fns'
-import { Plus, Search, ClipboardList, Filter } from 'lucide-react'
+import { Plus, Search, ClipboardList, Calendar, Map, Filter } from 'lucide-react'
+
+const JOB_SECTION_NAV = [
+  { to: '/jobs', label: 'List', icon: ClipboardList, exact: true },
+  { to: '/dispatch', label: 'Board', icon: Calendar },
+  { to: '/routes', label: 'Routes', icon: Map },
+]
 
 const STATUS_FILTERS = [
   { id: 'all', label: 'All Jobs' },
@@ -59,6 +66,7 @@ export function Jobs() {
           </Link>
         }
       />
+      <SectionNav items={JOB_SECTION_NAV} />
 
       <div className="flex items-center gap-3 mb-4">
         <div className="relative flex-1 max-w-sm">

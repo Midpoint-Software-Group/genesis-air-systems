@@ -2,8 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { PageHeader } from '../components/PageHeader'
+import { SectionNav } from '../components/SectionNav'
 import { EmptyState } from '../components/EmptyState'
-import { Plus, Search, Building2, Home, Phone, Mail, Users } from 'lucide-react'
+import { Plus, Search, Building2, Home, Phone, Mail, Users, UserCog } from 'lucide-react'
+
+const CUSTOMER_SECTION_NAV = [
+  { to: '/customers', label: 'Customers', icon: Users, exact: true },
+  { to: '/team', label: 'Team', icon: UserCog },
+]
 
 export function Customers() {
   const [customers, setCustomers] = useState([])
@@ -50,6 +56,7 @@ export function Customers() {
           </Link>
         }
       />
+      <SectionNav items={CUSTOMER_SECTION_NAV} />
 
       <div className="flex items-center gap-3 mb-4">
         <div className="relative flex-1 max-w-sm">

@@ -2,8 +2,15 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { PageHeader } from '../components/PageHeader'
+import { SectionNav } from '../components/SectionNav'
 import { format } from 'date-fns'
-import { Plus, Clock, Truck, PlayCircle, CheckCircle, AlertTriangle } from 'lucide-react'
+import { Plus, Clock, Truck, PlayCircle, CheckCircle, AlertTriangle, ClipboardList, Calendar, Map } from 'lucide-react'
+
+const JOB_SECTION_NAV = [
+  { to: '/jobs', label: 'List', icon: ClipboardList, exact: true },
+  { to: '/dispatch', label: 'Board', icon: Calendar },
+  { to: '/routes', label: 'Routes', icon: Map },
+]
 
 const COLUMNS = [
   { id: 'unassigned', label: 'Unassigned', icon: AlertTriangle, color: 'text-ember-600 bg-ember-50 border-ember-200' },
@@ -56,6 +63,7 @@ export function Dispatch() {
           </Link>
         }
       />
+      <SectionNav items={JOB_SECTION_NAV} />
 
       <div className="card p-4 mb-4">
         <div className="text-[10px] uppercase tracking-wider text-slate-500 font-medium mb-3">

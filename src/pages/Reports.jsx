@@ -2,11 +2,17 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { PageHeader } from '../components/PageHeader'
+import { SectionNav } from '../components/SectionNav'
 import { StatCard } from '../components/StatCard'
 import { format, startOfMonth, subMonths } from 'date-fns'
 import {
-  DollarSign, TrendingUp, Users, Wrench, Clock, CheckCircle
+  DollarSign, TrendingUp, Users, Wrench, Clock, CheckCircle, BarChart3, Star
 } from 'lucide-react'
+
+const REPORT_SECTION_NAV = [
+  { to: '/reports', label: 'Overview', icon: BarChart3, exact: true },
+  { to: '/reviews', label: 'Reviews', icon: Star },
+]
 
 export function Reports() {
   const [period, setPeriod] = useState('mtd')
@@ -148,6 +154,7 @@ export function Reports() {
           </div>
         }
       />
+      <SectionNav items={REPORT_SECTION_NAV} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <StatCard label="Total Revenue" value={`$${totalRevenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}`}

@@ -3,12 +3,19 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { optimizeRoute, geocodeAddress, haversineMiles } from '../lib/scheduler'
 import { PageHeader } from '../components/PageHeader'
+import { SectionNav } from '../components/SectionNav'
 import { StatusPill } from '../components/StatusPill'
 import { format, parseISO } from 'date-fns'
 import {
-  Map as MapIcon, Navigation, AlertCircle, Sparkles, Route as RouteIcon,
+  Map as MapIcon, Navigation, AlertCircle, ClipboardList, Calendar,
   ExternalLink, RefreshCw, Truck
 } from 'lucide-react'
+
+const JOB_SECTION_NAV = [
+  { to: '/jobs', label: 'List', icon: ClipboardList, exact: true },
+  { to: '/dispatch', label: 'Board', icon: Calendar },
+  { to: '/routes', label: 'Routes', icon: MapIcon },
+]
 
 export function Routes() {
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
@@ -126,6 +133,7 @@ export function Routes() {
           </>
         }
       />
+      <SectionNav items={JOB_SECTION_NAV} />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
         <div className="stat-card">
