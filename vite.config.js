@@ -5,23 +5,13 @@ export default defineConfig({
   plugins: [react()],
   server: { port: 5173 },
   build: {
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 1600,
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            // Heavy PDF/canvas libs into their own chunk — only loaded when a PDF is generated
-            if (id.includes('jspdf') || id.includes('html2canvas')) return 'pdf-vendor'
-            // Supabase + its dependencies
-            if (id.includes('@supabase')) return 'supabase-vendor'
-            // React core
-            if (id.includes('react-dom') || id.includes('react-router-dom') || (id.includes('react') && !id.includes('react-')))
-              return 'react-vendor'
-            // Icons
-            if (id.includes('lucide-react')) return 'icons-vendor'
-            // Everything else
-            return 'vendor'
-          }
+        manualChunks: {
+          // Keep these two isolated — they're large and truly independent
+          'pdf-vendor': ['jspdf', 'jspdf-autotable', 'html2canvas'],
+          'supabase-vendor': ['@supabase/supabase-js'],
         },
       },
     },
