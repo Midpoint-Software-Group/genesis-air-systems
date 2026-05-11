@@ -28,6 +28,10 @@ const Contracts = lazy(() => import('./pages/Contracts').then(m => ({ default: m
 const NewContract = lazy(() => import('./pages/NewContract').then(m => ({ default: m.NewContract })))
 const ContractDetail = lazy(() => import('./pages/ContractDetail').then(m => ({ default: m.ContractDetail })))
 const Reports = lazy(() => import('./pages/Reports').then(m => ({ default: m.Reports })))
+const Reviews = lazy(() => import('./pages/Reviews').then(m => ({ default: m.Reviews })))
+const RoutesPage = lazy(() => import('./pages/Routes').then(m => ({ default: m.Routes })))
+const CalendarConnect = lazy(() => import('./pages/CalendarConnect').then(m => ({ default: m.CalendarConnect })))
+const PublicReview = lazy(() => import('./pages/PublicReview').then(m => ({ default: m.PublicReview })))
 const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })))
 
 const PortalLayout = lazy(() => import('./pages/portal/PortalLayout').then(m => ({ default: m.PortalLayout })))
@@ -128,8 +132,13 @@ export default function App() {
           <Route path="/contracts/new" element={<NewContract />} />
           <Route path="/contracts/:id" element={<ContractDetail />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/reviews" element={<Reviews />} />
+          <Route path="/routes" element={<RoutesPage />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/settings/calendar" element={<CalendarConnect />} />
         </Route>
+
+        <Route path="/review/:token" element={<PublicReview />} />
 
         <Route path="/tech" element={<TechProtected><TechLayout /></TechProtected>}>
           <Route index element={<TechDashboard />} />

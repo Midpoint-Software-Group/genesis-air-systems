@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { PageHeader } from '../components/PageHeader'
 import {
   Save, Building2, DollarSign, Mail, Bell, Settings as SettingsIcon,
-  CheckCircle, AlertTriangle, Eye, EyeOff, ExternalLink
+  CheckCircle, AlertTriangle, Eye, EyeOff, ExternalLink, Calendar
 } from 'lucide-react'
 
 const SECTIONS = [
@@ -111,6 +112,12 @@ export function Settings() {
               </button>
             )
           })}
+          <div className="my-2 border-t border-navy-100"></div>
+          <Link to="/settings/calendar"
+            className="w-full text-left flex items-center gap-2 px-3 py-2 rounded text-xs font-medium text-navy-700 hover:bg-navy-50">
+            <Calendar size={14} />
+            Calendar Sync
+          </Link>
         </nav>
 
         <div className="space-y-4">

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { PageHeader } from '../components/PageHeader'
+import { SmartScheduler } from '../components/SmartScheduler'
+import { geocodeAddress } from '../lib/scheduler'
 import { ArrowLeft } from 'lucide-react'
 
 const SERVICE_TYPES = [
@@ -120,8 +122,23 @@ export function NewJob() {
 
     const { data, error } = await supabase.from('jobs').insert(payload).select().single()
     setLoading(false)
-    if (error) setError(error.message)
-    else navigate(`/jobs/${data.id}`)
+    if (error) { setError(error.message); return }
+
+    // Geocode in background (don't block navigation)
+    const fullAddress = [address.address_line1, address.city, address.state, address.zip_code].filter(Boolean).join(', ')
+    if (fullAddress.length > 5) {
+      geocodeAddress(fullAddress).then(geo => {
+        if (geo?.latitude) {
+          supabase.from('jobs').update({
+            latitude: geo.latitude,
+            longitude: geo.longitude,
+            geocoded_at: new Date().toISOString(),
+          }).eq('id', data.id).then()
+        }
+      }).catch(() => { /* non-fatal */ })
+    }
+
+    navigate(`/jobs/${data.id}`)
   }
 
   return (
@@ -185,10 +202,31 @@ export function NewJob() {
 
         <div className="mb-6">
           <label className="label">Assigned Tech</label>
-          <select name="assigned_tech_id" className="input" value={form.assigned_tech_id} onChange={handleChange}>
+          <select name="assigned_tech_id" className="input mb-3" value={form.assigned_tech_id} onChange={handleChange}>
             <option value="">Unassigned</option>
             {techs.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
           </select>
+
+          {(form.scheduled_at && (form.use_customer_address ? selectedCustomer?.address_line1 : form.address_line1)) && (
+            <SmartScheduler
+              jobAddress={form.use_customer_address ? {
+                address_line1: selectedCustomer?.address_line1,
+                city: selectedCustomer?.city,
+                state: selectedCustomer?.state,
+                zip_code: selectedCustomer?.zip_code,
+              } : {
+                address_line1: form.address_line1,
+                city: form.city,
+                state: form.state,
+                zip_code: form.zip_code,
+              }}
+              scheduledAt={form.scheduled_at}
+              durationMinutes={parseInt(form.estimated_duration_minutes) || 60}
+              priority={form.priority}
+              selectedTechId={form.assigned_tech_id}
+              onSelect={(techId) => setForm({ ...form, assigned_tech_id: techId })}
+            />
+          )}
         </div>
 
         {equipment.length > 0 && (

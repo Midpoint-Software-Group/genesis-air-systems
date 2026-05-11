@@ -4,10 +4,12 @@ import { supabase } from '../lib/supabase'
 import { PageHeader } from '../components/PageHeader'
 import { StatusPill } from '../components/StatusPill'
 import { PhotoGallery } from '../components/PhotoGallery'
+import { syncJobToCalendar } from './CalendarConnect'
+import { sendReviewRequest } from '../lib/reviewService'
 import { format } from 'date-fns'
 import {
   ArrowLeft, MapPin, Clock, User, Wrench, Phone,
-  CheckCircle, PlayCircle, Truck, AlertTriangle
+  CheckCircle, PlayCircle, Truck, AlertTriangle, Calendar, Star, Mail
 } from 'lucide-react'
 
 const STATUS_TRANSITIONS = {
@@ -25,6 +27,7 @@ export function JobDetail() {
   const [job, setJob] = useState(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
+  const [actionMsg, setActionMsg] = useState(null)
 
   useEffect(() => {
     loadJob()
@@ -39,12 +42,60 @@ export function JobDetail() {
 
   async function updateStatus(newStatus) {
     setUpdating(true)
+    setActionMsg(null)
+    const wasNotCompleted = job.status !== 'completed'
     const updates = { status: newStatus }
     if (newStatus === 'completed') updates.completed_at = new Date().toISOString()
     if (newStatus === 'in_progress') updates.started_at = new Date().toISOString()
     await supabase.from('jobs').update(updates).eq('id', id)
+
+    // Auto-send review request when status transitions to completed
+    if (newStatus === 'completed' && wasNotCompleted && job.customer_id) {
+      try {
+        const { data: customer } = await supabase.from('customers').select('*').eq('id', job.customer_id).single()
+        if (customer?.email) {
+          await sendReviewRequest({ ...job, status: 'completed' }, customer)
+          setActionMsg({ success: true, text: 'Job completed. Review request emailed to customer.' })
+        }
+      } catch (err) {
+        console.error('Review request failed:', err)
+        // non-fatal
+      }
+    }
+
     loadJob()
     setUpdating(false)
+  }
+
+  async function handleSyncCalendar() {
+    setUpdating(true)
+    setActionMsg(null)
+    try {
+      const result = await syncJobToCalendar(id)
+      setActionMsg({ success: true, text: `Synced to Google Calendar.${result.event_link ? ' Opening event…' : ''}` })
+      if (result.event_link) window.open(result.event_link, '_blank')
+      loadJob()
+    } catch (err) {
+      setActionMsg({ error: true, text: err.message })
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  async function handleSendReview() {
+    setUpdating(true)
+    setActionMsg(null)
+    try {
+      const { data: customer } = await supabase.from('customers').select('*').eq('id', job.customer_id).single()
+      if (!customer?.email) throw new Error('Customer has no email on file')
+      const result = await sendReviewRequest(job, customer)
+      if (result?.skipped) setActionMsg({ success: true, text: result.reason || 'Already sent' })
+      else setActionMsg({ success: true, text: 'Review request emailed to customer.' })
+    } catch (err) {
+      setActionMsg({ error: true, text: err.message })
+    } finally {
+      setUpdating(false)
+    }
   }
 
   if (loading) return <div className="p-8 text-center text-sm text-slate-400">Loading job…</div>
@@ -75,6 +126,17 @@ export function JobDetail() {
             <button onClick={() => navigate('/jobs')} className="btn-secondary inline-flex items-center gap-2">
               <ArrowLeft size={16} /> Back
             </button>
+            <button onClick={handleSyncCalendar} disabled={updating}
+              className="btn-secondary inline-flex items-center gap-2"
+              title={job.google_event_id ? 'Update Google Calendar event' : 'Sync to Google Calendar'}>
+              <Calendar size={16} /> {job.google_event_id ? 'Update Calendar' : 'Sync to Calendar'}
+            </button>
+            {job.status === 'completed' && (
+              <button onClick={handleSendReview} disabled={updating}
+                className="btn-secondary inline-flex items-center gap-2">
+                <Star size={16} /> Send Review Request
+              </button>
+            )}
             {nextStatuses.map(s => {
               const Icon = statusIcons[s] || PlayCircle
               return (
@@ -88,6 +150,16 @@ export function JobDetail() {
           </>
         }
       />
+
+      {actionMsg && (
+        <div className={`rounded p-3 mb-4 text-sm flex items-start gap-2 ${
+          actionMsg.error ? 'bg-red-50 border border-red-200 text-red-800' :
+          'bg-emerald-50 border border-emerald-200 text-emerald-800'
+        }`}>
+          {actionMsg.error ? <AlertTriangle size={14} className="mt-0.5" /> : <CheckCircle size={14} className="mt-0.5" />}
+          {actionMsg.text}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
         <div className="space-y-4">

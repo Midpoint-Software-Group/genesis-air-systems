@@ -5,19 +5,22 @@ import { supabase } from '../lib/supabase'
 import { FullLogo } from './Logo'
 import {
   LayoutDashboard, Users, ClipboardList, Calendar, FileText,
-  Receipt, BarChart3, Settings, LogOut, Bell, Search, UserCog, Inbox, Repeat
+  Receipt, BarChart3, Settings, LogOut, Bell, Search, UserCog, Inbox, Repeat,
+  Star, Map
 } from 'lucide-react'
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/jobs', label: 'Jobs', icon: ClipboardList },
   { to: '/dispatch', label: 'Dispatch', icon: Calendar },
+  { to: '/routes', label: 'Routes', icon: Map },
   { to: '/requests', label: 'Requests', icon: Inbox },
   { to: '/customers', label: 'Customers', icon: Users },
   { to: '/team', label: 'Team', icon: UserCog },
   { to: '/contracts', label: 'Contracts', icon: Repeat },
   { to: '/estimates', label: 'Estimates', icon: FileText },
   { to: '/invoices', label: 'Invoices', icon: Receipt },
+  { to: '/reviews', label: 'Reviews', icon: Star },
   { to: '/reports', label: 'Reports', icon: BarChart3 },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]
