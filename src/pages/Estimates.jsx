@@ -63,7 +63,7 @@ export function Estimates() {
             </thead>
             <tbody>
               {estimates.map(est => (
-                <tr key={est.id} className="border-t border-navy-50 hover:bg-navy-50/30">
+                <tr key={est.id} onClick={() => window.location.assign(`/estimates/${est.id}`)} className="border-t border-navy-50 hover:bg-navy-50/30 cursor-pointer">
                   <td className="py-3 px-4 text-xs font-medium text-navy-900">{est.estimate_number}</td>
                   <td className="py-3 px-2 text-xs text-navy-900">{est.customer_name}</td>
                   <td className="py-3 px-2 text-xs text-slate-600">{format(new Date(est.created_at), 'MMM d, yyyy')}</td>

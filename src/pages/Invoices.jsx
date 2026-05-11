@@ -81,7 +81,7 @@ export function Invoices() {
             </thead>
             <tbody>
               {invoices.map(inv => (
-                <tr key={inv.id} className="border-t border-navy-50 hover:bg-navy-50/30">
+                <tr key={inv.id} onClick={() => window.location.assign(`/invoices/${inv.id}`)} className="border-t border-navy-50 hover:bg-navy-50/30 cursor-pointer">
                   <td className="py-3 px-4 text-xs font-medium text-navy-900">{inv.invoice_number}</td>
                   <td className="py-3 px-2 text-xs text-navy-900">{inv.customer_name}</td>
                   <td className="py-3 px-2 text-xs text-slate-600">{format(new Date(inv.created_at), 'MMM d, yyyy')}</td>

@@ -13,7 +13,11 @@ import { JobDetail } from './pages/JobDetail'
 import { NewJob } from './pages/NewJob'
 import { Dispatch } from './pages/Dispatch'
 import { Estimates } from './pages/Estimates'
+import { NewEstimate } from './pages/NewEstimate'
+import { EstimateDetail } from './pages/EstimateDetail'
 import { Invoices } from './pages/Invoices'
+import { NewInvoice } from './pages/NewInvoice'
+import { InvoiceDetail } from './pages/InvoiceDetail'
 import { Reports } from './pages/Reports'
 
 import { PortalLayout } from './pages/portal/PortalLayout'
@@ -71,7 +75,11 @@ export default function App() {
         <Route path="/jobs/:id" element={<JobDetail />} />
         <Route path="/dispatch" element={<Dispatch />} />
         <Route path="/estimates" element={<Estimates />} />
+        <Route path="/estimates/new" element={<NewEstimate />} />
+        <Route path="/estimates/:id" element={<EstimateDetail />} />
         <Route path="/invoices" element={<Invoices />} />
+        <Route path="/invoices/new" element={<NewInvoice />} />
+        <Route path="/invoices/:id" element={<InvoiceDetail />} />
         <Route path="/reports" element={<Reports />} />
       </Route>
 
