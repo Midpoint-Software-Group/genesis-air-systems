@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { PageHeader } from '../components/PageHeader'
 import { StatusPill } from '../components/StatusPill'
+import { PhotoGallery } from '../components/PhotoGallery'
 import { format } from 'date-fns'
 import {
   ArrowLeft, MapPin, Clock, User, Wrench, Phone,
@@ -166,6 +167,8 @@ export function JobDetail() {
               </div>
             </div>
           )}
+
+          <PhotoGallery jobId={id} />
         </div>
 
         <div className="space-y-4">

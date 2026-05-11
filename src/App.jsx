@@ -22,6 +22,9 @@ import { Team } from './pages/Team'
 import { NewTech } from './pages/NewTech'
 import { TechDetail } from './pages/TechDetail'
 import { ServiceRequests } from './pages/ServiceRequests'
+import { Contracts } from './pages/Contracts'
+import { NewContract } from './pages/NewContract'
+import { ContractDetail } from './pages/ContractDetail'
 import { Reports } from './pages/Reports'
 
 import { PortalLayout } from './pages/portal/PortalLayout'
@@ -89,6 +92,9 @@ export default function App() {
         <Route path="/invoices" element={<Invoices />} />
         <Route path="/invoices/new" element={<NewInvoice />} />
         <Route path="/invoices/:id" element={<InvoiceDetail />} />
+        <Route path="/contracts" element={<Contracts />} />
+        <Route path="/contracts/new" element={<NewContract />} />
+        <Route path="/contracts/:id" element={<ContractDetail />} />
         <Route path="/reports" element={<Reports />} />
       </Route>
 
