@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 import { FullLogo } from './Logo'
 import {
   LayoutDashboard, Users, ClipboardList, Inbox, Repeat,
-  BarChart3, Settings, LogOut, Search, Receipt
+  BarChart3, Settings, LogOut, Receipt, Award, Megaphone
 } from 'lucide-react'
 
 const navItems = [
@@ -14,7 +14,9 @@ const navItems = [
   { to: '/requests', label: 'Requests', icon: Inbox },
   { to: '/customers', label: 'Customers', icon: Users },
   { to: '/contracts', label: 'Contracts', icon: Repeat },
+  { to: '/memberships', label: 'Memberships', icon: Award },
   { to: '/estimates', label: 'Billing', icon: Receipt },
+  { to: '/campaigns', label: 'Campaigns', icon: Megaphone },
   { to: '/reports', label: 'Reports', icon: BarChart3 },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]

@@ -5,28 +5,128 @@ import { supabase } from '../lib/supabase'
 import { StatCard } from '../components/StatCard'
 import { StatusPill } from '../components/StatusPill'
 import { PageHeader } from '../components/PageHeader'
-import { format } from 'date-fns'
+import { format, addHours } from 'date-fns'
 import {
   ClipboardList, Calendar, Users, DollarSign, Plus,
-  AlertTriangle, FileText, ArrowRight
+  AlertTriangle, FileText, ArrowRight, Bell, Clock
 } from 'lucide-react'
 
 export function Dashboard() {
   const { profile } = useAuth()
   const [stats, setStats] = useState({
-    openJobs: 0,
-    scheduledToday: 0,
-    techsActive: 0,
-    revenueMTD: 0,
+    openJobs: 0, scheduledToday: 0, techsActive: 0, revenueMTD: 0,
   })
   const [jobs, setJobs] = useState([])
   const [techs, setTechs] = useState([])
   const [alerts, setAlerts] = useState([])
+  const [reminderJobs, setReminderJobs] = useState([])
+  const [unsoldEstimates, setUnsoldEstimates] = useState([])
   const [loading, setLoading] = useState(true)
+  const [sendingReminders, setSendingReminders] = useState(false)
 
   useEffect(() => {
     loadDashboardData()
+    checkReminders()
+    checkUnsoldEstimates()
   }, [])
+
+  async function checkReminders() {
+    // Find jobs scheduled in the next 20-28 hours that haven't been reminded
+    const soon = new Date(Date.now() + 20 * 60 * 60 * 1000).toISOString()
+    const later = new Date(Date.now() + 28 * 60 * 60 * 1000).toISOString()
+    const { data } = await supabase.from('jobs')
+      .select('id, job_number, customer_name, customer_id, service_type, scheduled_at, assigned_tech_name')
+      .in('status', ['scheduled'])
+      .gte('scheduled_at', soon)
+      .lte('scheduled_at', later)
+      .eq('reminder_24h_sent', false)
+    setReminderJobs(data || [])
+  }
+
+  async function checkUnsoldEstimates() {
+    // Estimates in 'sent' status older than 3 days with no follow-up or follow-up > 3 days ago
+    const cutoff = new Date(Date.now() - 3 * 86400000).toISOString()
+    const { data } = await supabase.from('estimates')
+      .select('id, estimate_number, customer_name, total_amount, sent_at, follow_up_count, follow_up_sent_at')
+      .eq('status', 'sent')
+      .lte('sent_at', cutoff)
+      .lt('follow_up_count', 3)
+    setUnsoldEstimates(data || [])
+  }
+
+  async function sendAllReminders() {
+    setSendingReminders(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    const { data: settings } = await supabase.from('business_settings')
+      .select('business_name, business_phone').eq('id', 1).single()
+
+    for (const job of reminderJobs) {
+      try {
+        // Get customer phone
+        const { data: customer } = await supabase.from('customers')
+          .select('phone, email, first_name, company_name, customer_type').eq('id', job.customer_id).single()
+        if (!customer) continue
+
+        const name = customer.customer_type === 'commercial' ? customer.company_name : customer.first_name
+        const scheduledStr = format(new Date(job.scheduled_at), 'EEEE, MMM d \'at\' h:mm a')
+        const biz = settings?.business_name || 'Genesis Air Systems'
+        const phone = settings?.business_phone || ''
+
+        // Send SMS reminder
+        if (customer.phone) {
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-sms`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: customer.phone, to_name: name,
+              body: `Reminder: Your ${job.service_type} appointment with ${biz} is scheduled for ${scheduledStr}${job.assigned_tech_name ? ` with ${job.assigned_tech_name}` : ''}. Questions? Call ${phone}.`,
+              sms_type: 'appointment_reminder', related_id: job.id, related_type: 'job',
+            }),
+          })
+        }
+
+        // Mark reminder sent
+        await supabase.from('jobs').update({
+          reminder_sent_at: new Date().toISOString(),
+          reminder_24h_sent: true,
+        }).eq('id', job.id)
+      } catch (e) { console.error('Reminder error:', e) }
+    }
+
+    setSendingReminders(false)
+    setReminderJobs([])
+  }
+
+  async function sendEstimateFollowUp(estimate) {
+    const { data: { session } } = await supabase.auth.getSession()
+    const { data: settings } = await supabase.from('business_settings')
+      .select('business_name, business_phone, business_email').eq('id', 1).single()
+    const { data: customer } = await supabase.from('estimates')
+      .select('customer_id').eq('id', estimate.id).single()
+    const { data: cust } = await supabase.from('customers')
+      .select('email, first_name, company_name, customer_type').eq('id', customer?.customer_id).single()
+
+    if (cust?.email) {
+      const name = cust.customer_type === 'commercial' ? cust.company_name : cust.first_name
+      const biz = settings?.business_name || 'Genesis Air Systems'
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: cust.email, to_name: name,
+          subject: `Following up on your estimate — ${estimate.estimate_number}`,
+          body: `Hi ${name},\n\nWe wanted to follow up on estimate ${estimate.estimate_number} for $${Number(estimate.total_amount).toFixed(2)} that we sent over.\n\nDo you have any questions or would you like to make any changes? We're happy to help.\n\nPlease reply to this email or call ${settings?.business_phone || ''} to move forward.\n\nThank you,\n${biz}`,
+        }),
+      })
+    }
+
+    await supabase.from('estimates').update({
+      follow_up_sent_at: new Date().toISOString(),
+      follow_up_count: (estimate.follow_up_count || 0) + 1,
+    }).eq('id', estimate.id)
+
+    checkUnsoldEstimates()
+  }
 
   async function loadDashboardData() {
     try {
@@ -197,6 +297,53 @@ export function Dashboard() {
             )}
           </div>
 
+          {reminderJobs.length > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+              <div className="text-[10px] uppercase tracking-wider text-blue-800 font-medium mb-2 flex items-center gap-1.5">
+                <Bell size={12} /> {reminderJobs.length} Reminder{reminderJobs.length !== 1 ? 's' : ''} to Send
+              </div>
+              <div className="space-y-1.5 mb-3">
+                {reminderJobs.slice(0, 3).map(j => (
+                  <div key={j.id} className="text-xs text-blue-900">
+                    <strong>{j.job_number}</strong> · {j.customer_name}
+                    <div className="text-blue-700">{format(new Date(j.scheduled_at), 'MMM d \'at\' h:mm a')}</div>
+                  </div>
+                ))}
+              </div>
+              <button onClick={sendAllReminders} disabled={sendingReminders}
+                className="w-full py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded font-medium">
+                {sendingReminders ? 'Sending…' : `Send ${reminderJobs.length} Reminder SMS`}
+              </button>
+            </div>
+          )}
+
+          {unsoldEstimates.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
+              <div className="text-[10px] uppercase tracking-wider text-amber-800 font-medium mb-2 flex items-center gap-1.5">
+                <Clock size={12} /> {unsoldEstimates.length} Unsold Estimate{unsoldEstimates.length !== 1 ? 's' : ''}
+              </div>
+              <div className="space-y-2">
+                {unsoldEstimates.slice(0, 3).map(est => (
+                  <div key={est.id} className="flex items-center justify-between">
+                    <div className="text-xs">
+                      <div className="text-amber-900 font-medium">{est.customer_name}</div>
+                      <div className="text-amber-700">{est.estimate_number} · ${Number(est.total_amount).toFixed(0)}</div>
+                    </div>
+                    <button onClick={() => sendEstimateFollowUp(est)}
+                      className="text-xs px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded">
+                      Follow up
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {unsoldEstimates.length > 3 && (
+                <Link to="/estimates" className="text-[10px] text-amber-700 hover:underline mt-2 block">
+                  +{unsoldEstimates.length - 3} more →
+                </Link>
+              )}
+            </div>
+          )}
+
           {alerts.length > 0 && (
             <div className="bg-ember-50 border border-ember-200 rounded-md p-4">
               <div className="text-[10px] uppercase tracking-wider text-ember-800 font-medium mb-3 flex items-center gap-1.5">
@@ -230,9 +377,9 @@ export function Dashboard() {
                 <FileText size={16} className="text-ember-500 mx-auto mb-1" />
                 <div className="text-[10px] text-white">Estimate</div>
               </Link>
-              <Link to="/invoices/new" className="bg-navy-800 hover:bg-navy-700 transition-colors rounded p-3 text-center">
-                <DollarSign size={16} className="text-ember-500 mx-auto mb-1" />
-                <div className="text-[10px] text-white">Invoice</div>
+              <Link to="/campaigns" className="bg-navy-800 hover:bg-navy-700 transition-colors rounded p-3 text-center">
+                <Bell size={16} className="text-ember-500 mx-auto mb-1" />
+                <div className="text-[10px] text-white">Campaign</div>
               </Link>
             </div>
           </div>

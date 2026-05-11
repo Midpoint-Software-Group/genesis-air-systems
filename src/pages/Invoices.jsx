@@ -7,12 +7,40 @@ import { EmptyState } from '../components/EmptyState'
 import { StatusPill } from '../components/StatusPill'
 import { StatCard } from '../components/StatCard'
 import { format } from 'date-fns'
-import { Plus, Receipt, DollarSign, Clock, AlertTriangle, FileText } from 'lucide-react'
+import { Plus, Receipt, DollarSign, Clock, AlertTriangle, FileText, Download } from 'lucide-react'
 
 const BILLING_SECTION_NAV = [
   { to: '/estimates', label: 'Estimates', icon: FileText, exact: true },
   { to: '/invoices', label: 'Invoices', icon: Receipt },
 ]
+
+function exportToQuickBooks(invoices) {
+  // QuickBooks IIF format compatible CSV
+  const headers = [
+    'Invoice Number', 'Customer', 'Date', 'Due Date', 'Status',
+    'Subtotal', 'Tax', 'Total', 'Amount Paid', 'Balance Due',
+  ]
+  const rows = invoices.map(inv => [
+    inv.invoice_number,
+    inv.customer_name,
+    inv.created_at ? format(new Date(inv.created_at), 'MM/dd/yyyy') : '',
+    inv.due_date ? format(new Date(inv.due_date), 'MM/dd/yyyy') : '',
+    inv.status,
+    Number(inv.subtotal || 0).toFixed(2),
+    Number(inv.tax_amount || 0).toFixed(2),
+    Number(inv.total_amount || 0).toFixed(2),
+    Number(inv.amount_paid || 0).toFixed(2),
+    (Number(inv.total_amount || 0) - Number(inv.amount_paid || 0)).toFixed(2),
+  ])
+  const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n')
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `genesis-air-invoices-${format(new Date(), 'yyyy-MM-dd')}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 export function Invoices() {
   const [invoices, setInvoices] = useState([])
@@ -45,9 +73,15 @@ export function Invoices() {
         title="Invoices"
         subtitle={`${invoices.length} invoice${invoices.length !== 1 ? 's' : ''}`}
         actions={
-          <Link to="/invoices/new" className="btn-primary inline-flex items-center gap-2">
-            <Plus size={16} /> New Invoice
-          </Link>
+          <div className="flex gap-2">
+            <button onClick={() => exportToQuickBooks(invoices)}
+              className="btn-secondary inline-flex items-center gap-2 text-xs">
+              <Download size={14} /> Export CSV
+            </button>
+            <Link to="/invoices/new" className="btn-primary inline-flex items-center gap-2">
+              <Plus size={16} /> New Invoice
+            </Link>
+          </div>
         }
       />
       <SectionNav items={BILLING_SECTION_NAV} />

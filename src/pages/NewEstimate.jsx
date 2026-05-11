@@ -3,8 +3,15 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { PageHeader } from '../components/PageHeader'
 import { LineItemEditor, calculateTotals } from '../components/LineItemEditor'
-import { ArrowLeft, Save, Send } from 'lucide-react'
+import { ArrowLeft, Save, Send, Layers } from 'lucide-react'
 import { format, addDays } from 'date-fns'
+
+const TIER_COLORS = {
+  good: 'border-blue-200 bg-blue-50',
+  better: 'border-emerald-200 bg-emerald-50',
+  best: 'border-amber-200 bg-amber-50',
+}
+const TIER_LABELS = { good: 'Good', better: 'Better', best: 'Best' }
 
 export function NewEstimate() {
   const navigate = useNavigate()
@@ -16,8 +23,14 @@ export function NewEstimate() {
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isMultiOption, setIsMultiOption] = useState(false)
 
+  // Standard single-tier items
   const [items, setItems] = useState([])
+  // Multi-option items per tier
+  const [tierItems, setTierItems] = useState({ good: [], better: [], best: [] })
+  const [tierLabels, setTierLabels] = useState({ good: 'Good', better: 'Better', best: 'Best' })
+
   const [form, setForm] = useState({
     customer_id: presetCustomerId || '',
     job_id: presetJobId || '',
@@ -60,7 +73,10 @@ export function NewEstimate() {
 
     setLoading(true)
 
-    const totals = calculateTotals(items, form.tax_rate, form.discount_amount)
+    const totals = isMultiOption
+      ? calculateTotals(tierItems.better.length > 0 ? tierItems.better : tierItems.good, form.tax_rate, form.discount_amount)
+      : calculateTotals(items, form.tax_rate, form.discount_amount)
+
     const customerName = selectedCustomer?.customer_type === 'commercial'
       ? selectedCustomer.company_name
       : `${selectedCustomer?.first_name} ${selectedCustomer?.last_name}`.trim()
@@ -79,6 +95,10 @@ export function NewEstimate() {
       terms: form.terms,
       valid_until: form.valid_until || null,
       sent_at: status === 'sent' ? new Date().toISOString() : null,
+      is_multi_option: isMultiOption,
+      option_good_label: tierLabels.good,
+      option_better_label: tierLabels.better,
+      option_best_label: tierLabels.best,
     }
 
     const { data: estimate, error: estError } = await supabase
@@ -93,15 +113,34 @@ export function NewEstimate() {
       return
     }
 
-    // Insert line items
-    const lineItems = items.map((item, idx) => ({
-      estimate_id: estimate.id,
-      description: item.description.trim(),
-      quantity: Number(item.quantity) || 1,
-      unit_price: Number(item.unit_price) || 0,
-      is_taxable: !!item.is_taxable,
-      sort_order: idx,
-    }))
+    // Build line items array
+    let lineItems = []
+    if (isMultiOption) {
+      for (const [tier, tItems] of Object.entries(tierItems)) {
+        tItems.forEach((item, idx) => {
+          if (!item.description?.trim()) return
+          lineItems.push({
+            estimate_id: estimate.id,
+            description: item.description.trim(),
+            quantity: Number(item.quantity) || 1,
+            unit_price: Number(item.unit_price) || 0,
+            is_taxable: !!item.is_taxable,
+            sort_order: idx,
+            option_tier: tier,
+          })
+        })
+      }
+    } else {
+      lineItems = items.filter(i => i.description?.trim()).map((item, idx) => ({
+        estimate_id: estimate.id,
+        description: item.description.trim(),
+        quantity: Number(item.quantity) || 1,
+        unit_price: Number(item.unit_price) || 0,
+        is_taxable: !!item.is_taxable,
+        sort_order: idx,
+        option_tier: 'standard',
+      }))
+    }
 
     const { error: lineError } = await supabase.from('estimate_line_items').insert(lineItems)
 
@@ -172,15 +211,62 @@ export function NewEstimate() {
           </div>
 
           <div className="card p-6">
-            <div className="text-[10px] uppercase tracking-wider text-slate-500 font-medium mb-3">
-              Line Items
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">
+                Line Items
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={isMultiOption} onChange={e => setIsMultiOption(e.target.checked)}
+                  className="rounded border-navy-200 text-ember-600 focus:ring-ember-500" />
+                <span className="text-xs font-medium text-navy-900 flex items-center gap-1.5">
+                  <Layers size={12} className="text-ember-600" /> Good / Better / Best
+                </span>
+              </label>
             </div>
-            <LineItemEditor
-              items={items}
-              onChange={setItems}
-              taxRate={form.tax_rate}
-              discountAmount={form.discount_amount}
-            />
+
+            {!isMultiOption ? (
+              <LineItemEditor items={items} onChange={setItems} taxRate={form.tax_rate} discountAmount={form.discount_amount} />
+            ) : (
+              <div className="space-y-4">
+                {Object.entries(tierItems).map(([tier, tItems]) => {
+                  const tierTotals = calculateTotals(tItems, form.tax_rate, form.discount_amount)
+                  return (
+                    <div key={tier} className={`border-2 rounded-md p-4 ${TIER_COLORS[tier]}`}>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold uppercase tracking-wide text-navy-900">
+                            {TIER_LABELS[tier]}
+                          </span>
+                          <input
+                            type="text"
+                            value={tierLabels[tier]}
+                            onChange={e => setTierLabels(prev => ({ ...prev, [tier]: e.target.value }))}
+                            className="input py-0.5 text-xs w-32"
+                            placeholder={`Label for ${tier}`}
+                          />
+                        </div>
+                        {tItems.length > 0 && (
+                          <span className="text-xs font-medium text-navy-900">
+                            Total: <strong>${tierTotals.total.toFixed(2)}</strong>
+                          </span>
+                        )}
+                      </div>
+                      <LineItemEditor
+                        items={tItems}
+                        onChange={newItems => setTierItems(prev => ({ ...prev, [tier]: newItems }))}
+                        taxRate={form.tax_rate}
+                        discountAmount="0"
+                      />
+                      {tier === 'good' && tItems.length > 0 && (
+                        <p className="text-[10px] text-slate-500 mt-2">
+                          💡 Tip: Good = basic fix. Better = complete repair. Best = full solution with warranty.
+                        </p>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
           <div className="card p-6">

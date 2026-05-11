@@ -11,6 +11,7 @@ import {
 
 const REPORT_SECTION_NAV = [
   { to: '/reports', label: 'Overview', icon: BarChart3, exact: true },
+  { to: '/scorecards', label: 'Scorecards', icon: TrendingUp },
   { to: '/reviews', label: 'Reviews', icon: Star },
 ]
 

@@ -184,38 +184,82 @@ export function EstimateDetail() {
           <div className="card overflow-hidden">
             <div className="card-header">
               <span className="card-title-serif flex items-center gap-2">
-                <FileText size={14} /> Line Items
+                <FileText size={14} /> {estimate.is_multi_option ? 'Options' : 'Line Items'}
               </span>
+              {estimate.is_multi_option && estimate.selected_option && (
+                <span className="pill bg-emerald-100 text-emerald-800 text-xs">
+                  Customer selected: {estimate[`option_${estimate.selected_option}_label`] || estimate.selected_option}
+                </span>
+              )}
             </div>
-            {lineItems.length === 0 ? (
-              <div className="p-8 text-center text-sm text-slate-400">No line items</div>
+
+            {estimate.is_multi_option ? (
+              <div className="p-4 space-y-4">
+                {['good', 'better', 'best'].map(tier => {
+                  const tierLines = lineItems.filter(l => l.option_tier === tier)
+                  if (tierLines.length === 0) return null
+                  const tierTotal = tierLines.reduce((s, l) => s + Number(l.quantity) * Number(l.unit_price), 0)
+                  const label = estimate[`option_${tier}_label`] || tier
+                  const tierColors = { good: 'border-blue-200 bg-blue-50', better: 'border-emerald-200 bg-emerald-50', best: 'border-amber-200 bg-amber-50' }
+                  const isSelected = estimate.selected_option === tier
+                  return (
+                    <div key={tier} className={`border-2 rounded-md overflow-hidden ${isSelected ? 'border-emerald-500' : tierColors[tier]}`}>
+                      <div className={`px-4 py-2 flex items-center justify-between ${tierColors[tier]}`}>
+                        <div className="flex items-center gap-2">
+                          {isSelected && <CheckCircle size={14} className="text-emerald-600" />}
+                          <span className="font-medium text-sm text-navy-900">{label}</span>
+                        </div>
+                        <span className="font-serif text-lg text-navy-900">${tierTotal.toFixed(2)}</span>
+                      </div>
+                      <table className="w-full bg-white">
+                        <tbody>
+                          {tierLines.map(item => (
+                            <tr key={item.id} className="border-t border-navy-50">
+                              <td className="py-2 px-4 text-sm text-navy-900">{item.description}</td>
+                              <td className="py-2 px-2 text-sm text-slate-600 text-right">{Number(item.quantity).toFixed(2)}</td>
+                              <td className="py-2 px-2 text-sm text-slate-600 text-right">${Number(item.unit_price).toFixed(2)}</td>
+                              <td className="py-2 px-4 text-sm font-medium text-navy-900 text-right">
+                                ${(Number(item.quantity) * Number(item.unit_price)).toFixed(2)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )
+                })}
+              </div>
             ) : (
-              <table className="w-full">
-                <thead className="bg-navy-50/50">
-                  <tr>
-                    <th className="text-left text-[10px] uppercase tracking-wider text-slate-500 font-medium py-2.5 px-4">Description</th>
-                    <th className="text-right text-[10px] uppercase tracking-wider text-slate-500 font-medium py-2.5 px-2">Qty</th>
-                    <th className="text-right text-[10px] uppercase tracking-wider text-slate-500 font-medium py-2.5 px-2">Unit Price</th>
-                    <th className="text-center text-[10px] uppercase tracking-wider text-slate-500 font-medium py-2.5 px-2">Tax</th>
-                    <th className="text-right text-[10px] uppercase tracking-wider text-slate-500 font-medium py-2.5 px-4">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lineItems.map(item => (
-                    <tr key={item.id} className="border-t border-navy-50">
-                      <td className="py-3 px-4 text-sm text-navy-900">{item.description}</td>
-                      <td className="py-3 px-2 text-sm text-slate-600 text-right">{Number(item.quantity).toFixed(2)}</td>
-                      <td className="py-3 px-2 text-sm text-slate-600 text-right">${Number(item.unit_price).toFixed(2)}</td>
-                      <td className="py-3 px-2 text-sm text-center">
-                        {item.is_taxable ? <CheckCircle size={12} className="text-emerald-600 inline" /> : <span className="text-slate-300">—</span>}
-                      </td>
-                      <td className="py-3 px-4 text-sm font-medium text-navy-900 text-right">
-                        ${(Number(item.quantity) * Number(item.unit_price)).toFixed(2)}
-                      </td>
+              lineItems.length === 0 ? (
+                <div className="p-8 text-center text-sm text-slate-400">No line items</div>
+              ) : (
+                <table className="w-full">
+                  <thead className="bg-navy-50/50">
+                    <tr>
+                      <th className="text-left text-[10px] uppercase tracking-wider text-slate-500 font-medium py-2.5 px-4">Description</th>
+                      <th className="text-right text-[10px] uppercase tracking-wider text-slate-500 font-medium py-2.5 px-2">Qty</th>
+                      <th className="text-right text-[10px] uppercase tracking-wider text-slate-500 font-medium py-2.5 px-2">Unit Price</th>
+                      <th className="text-center text-[10px] uppercase tracking-wider text-slate-500 font-medium py-2.5 px-2">Tax</th>
+                      <th className="text-right text-[10px] uppercase tracking-wider text-slate-500 font-medium py-2.5 px-4">Total</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {lineItems.map(item => (
+                      <tr key={item.id} className="border-t border-navy-50">
+                        <td className="py-3 px-4 text-sm text-navy-900">{item.description}</td>
+                        <td className="py-3 px-2 text-sm text-slate-600 text-right">{Number(item.quantity).toFixed(2)}</td>
+                        <td className="py-3 px-2 text-sm text-slate-600 text-right">${Number(item.unit_price).toFixed(2)}</td>
+                        <td className="py-3 px-2 text-sm text-center">
+                          {item.is_taxable ? <CheckCircle size={12} className="text-emerald-600 inline" /> : <span className="text-slate-300">—</span>}
+                        </td>
+                        <td className="py-3 px-4 text-sm font-medium text-navy-900 text-right">
+                          ${(Number(item.quantity) * Number(item.unit_price)).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )
             )}
 
             <div className="border-t-2 border-navy-100 px-4 py-3 bg-navy-50/30">

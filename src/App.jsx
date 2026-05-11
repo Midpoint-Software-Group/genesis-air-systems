@@ -35,6 +35,9 @@ const PublicReview = lazy(() => import('./pages/PublicReview').then(m => ({ defa
 const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })))
 const Pricebook = lazy(() => import('./pages/Pricebook').then(m => ({ default: m.Pricebook })))
 const Inventory = lazy(() => import('./pages/Inventory').then(m => ({ default: m.Inventory })))
+const Scorecards = lazy(() => import('./pages/Scorecards').then(m => ({ default: m.Scorecards })))
+const Memberships = lazy(() => import('./pages/Memberships').then(m => ({ default: m.Memberships })))
+const Campaigns = lazy(() => import('./pages/Campaigns').then(m => ({ default: m.Campaigns })))
 
 const PortalLayout = lazy(() => import('./pages/portal/PortalLayout').then(m => ({ default: m.PortalLayout })))
 const PortalDashboard = lazy(() => import('./pages/portal/PortalDashboard').then(m => ({ default: m.PortalDashboard })))
@@ -140,6 +143,9 @@ export default function App() {
           <Route path="/settings/calendar" element={<CalendarConnect />} />
           <Route path="/pricebook" element={<Pricebook />} />
           <Route path="/inventory" element={<Inventory />} />
+          <Route path="/scorecards" element={<Scorecards />} />
+          <Route path="/memberships" element={<Memberships />} />
+          <Route path="/campaigns" element={<Campaigns />} />
         </Route>
 
         <Route path="/review/:token" element={<PublicReview />} />

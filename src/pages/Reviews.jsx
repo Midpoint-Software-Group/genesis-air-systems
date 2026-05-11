@@ -6,10 +6,11 @@ import { SectionNav } from '../components/SectionNav'
 import { EmptyState } from '../components/EmptyState'
 import { StatCard } from '../components/StatCard'
 import { format } from 'date-fns'
-import { Star, MessageCircle, TrendingUp, CheckCircle, Clock, Eye, EyeOff, BarChart3 } from 'lucide-react'
+import { Star, MessageCircle, TrendingUp, CheckCircle, Clock, Eye, EyeOff, BarChart3, Award } from 'lucide-react'
 
 const REPORT_SECTION_NAV = [
   { to: '/reports', label: 'Overview', icon: BarChart3, exact: true },
+  { to: '/scorecards', label: 'Scorecards', icon: Award },
   { to: '/reviews', label: 'Reviews', icon: Star },
 ]
 

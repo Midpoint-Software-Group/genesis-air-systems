@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { PageHeader } from '../components/PageHeader'
 import { StatusPill } from '../components/StatusPill'
 import { PhotoGallery } from '../components/PhotoGallery'
+import { JobForm } from '../components/JobForm'
 import { syncJobToCalendar } from './CalendarConnect'
 import { sendReviewRequest } from '../lib/reviewService'
 import { sendTechEnRouteSms, sendJobCompletedSms } from '../lib/smsService'
@@ -249,6 +250,8 @@ export function JobDetail() {
             </div>
           )}
 
+          <JobForm jobId={id} />
+
           <PhotoGallery jobId={id} />
         </div>
 
@@ -281,8 +284,103 @@ export function JobDetail() {
               <div className="text-sm text-slate-400 italic">Unassigned</div>
             )}
           </div>
+
+          {(job.billed_amount > 0 || job.total_cost > 0) && (
+            <div className="card p-4">
+              <div className="text-[10px] uppercase tracking-wider text-slate-500 font-medium mb-3 pb-2 border-b border-navy-50">
+                Job Costing
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Billed</span>
+                  <span className="text-navy-900 font-medium">${Number(job.billed_amount).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Labor Cost</span>
+                  <span className="text-navy-900">${Number(job.labor_cost).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Materials</span>
+                  <span className="text-navy-900">${Number(job.materials_cost).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between pt-2 border-t border-navy-100">
+                  <span className="font-medium text-navy-900">Gross Profit</span>
+                  <span className={`font-medium ${Number(job.gross_profit) >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                    ${Number(job.gross_profit).toFixed(2)}
+                    <span className="text-[11px] ml-1">({Number(job.profit_margin).toFixed(0)}%)</span>
+                  </span>
+                </div>
+              </div>
+              <button onClick={async () => {
+                await supabase.rpc('recalculate_job_cost', { job_uuid: id })
+                loadJob()
+              }} className="text-[10px] text-slate-400 hover:text-navy-700 mt-2 block">
+                ↻ Recalculate
+              </button>
+            </div>
+          )}
+
+          <CustomerEquipmentHistory customerId={job.customer_id} currentJobId={id} />
         </div>
       </div>
+    </div>
+  )
+}
+
+function CustomerEquipmentHistory({ customerId, currentJobId }) {
+  const [equipment, setEquipment] = useState([])
+  const [recentJobs, setRecentJobs] = useState([])
+
+  useEffect(() => {
+    if (!customerId) return
+    Promise.all([
+      supabase.from('equipment').select('*').eq('customer_id', customerId).eq('is_active', true).limit(5),
+      supabase.from('jobs').select('id, job_number, service_type, status, completed_at')
+        .eq('customer_id', customerId).neq('id', currentJobId)
+        .order('completed_at', { ascending: false }).limit(5),
+    ]).then(([eq, jobs]) => {
+      setEquipment(eq.data || [])
+      setRecentJobs(jobs.data || [])
+    })
+  }, [customerId])
+
+  if (equipment.length === 0 && recentJobs.length === 0) return null
+
+  return (
+    <div className="card p-4">
+      <div className="text-[10px] uppercase tracking-wider text-slate-500 font-medium mb-3 pb-2 border-b border-navy-50">
+        Equipment & History
+      </div>
+      {equipment.length > 0 && (
+        <div className="mb-3">
+          <div className="text-[10px] text-slate-400 mb-1.5">Equipment on site</div>
+          {equipment.map(e => (
+            <div key={e.id} className="text-xs text-navy-900 py-1 border-b border-navy-50 last:border-0">
+              <div className="font-medium">{e.nickname || e.equipment_type.replace('_', ' ')}</div>
+              <div className="text-slate-500">{[e.make, e.model].filter(Boolean).join(' ')}</div>
+              {e.next_service_due && (
+                <div className={`text-[10px] mt-0.5 ${new Date(e.next_service_due) < new Date() ? 'text-red-600' : 'text-slate-500'}`}>
+                  Next service: {new Date(e.next_service_due).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {recentJobs.length > 0 && (
+        <div>
+          <div className="text-[10px] text-slate-400 mb-1.5">Recent service history</div>
+          {recentJobs.map(j => (
+            <Link key={j.id} to={`/jobs/${j.id}`} className="block text-xs py-1 border-b border-navy-50 last:border-0 hover:text-ember-600">
+              <div className="flex justify-between">
+                <span className="font-medium text-navy-900">{j.job_number}</span>
+                <span className="text-slate-500">{j.completed_at ? new Date(j.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}</span>
+              </div>
+              <div className="text-slate-500">{j.service_type}</div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
